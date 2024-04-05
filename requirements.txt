@@ -1,0 +1,5 @@
+pre-commit
+black
+pydocstyle
+flake8
+isort
