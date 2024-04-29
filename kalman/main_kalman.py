@@ -1,37 +1,38 @@
-"""Filtros de kalman."""
+"""Filtro de kaman para deteccion de personas."""
 
 import cv2
 import numpy as np
+import torch
 from sort import Sort
+
+model = torch.hub.load("ultralytics/yolov5", "yolov5s", pretrained=True)
 
 
 def object_tracking():
-    """Rastreo de Objetos."""
-    cap = cv2.VideoCapture(r"kalman/test.mp4")
-
-    object_detector = cv2.createBackgroundSubtractorMOG2(history=5500, varThreshold=40)
+    """Funcion de tracking de objetos."""
+    cap = cv2.VideoCapture(r"/home/alan/Ambiente/kalman/test.mp4")
     mot_tracker = Sort()
 
     while True:
         ret, frame = cap.read()
         if not ret:
+            print("here")
             break
-        mask = object_detector.apply(frame)
-        _, mask = cv2.threshold(mask, 200, 255, cv2.THRESH_BINARY)
-        mask = cv2.GaussianBlur(mask, (5, 5), 0)
-        contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+        results = model(frame)
+        results = results.xyxy[0].cpu().numpy()
+        person_detections = results[results[:, 5] == 0]
+
         dets = []
-        for cnt in contours:
-            area = cv2.contourArea(cnt)
-            if area > 2000:
-                x, y, w, h = cv2.boundingRect(cnt)
-                dets.append([x, y, x + w, y + h, 1.0])
-                cv2.drawContours(frame, [cnt], -1, (0, 0, 255), 2)
+        for *xyxy, conf, cls in person_detections:
+            x1, y1, x2, y2 = map(int, xyxy)
+            dets.append([x1, y1, x2, y2, conf])
         dets = np.array(dets)
+
         trackers = mot_tracker.update(dets)
 
         for d in trackers:
-            x1, y1, x2, y2, track_id = map(int, d)
+            x1, y1, x2, y2, track_id = map(int, d[:5])
             cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 3)
             cv2.putText(
                 frame,
