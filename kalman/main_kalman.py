@@ -10,7 +10,8 @@ model = torch.hub.load("ultralytics/yolov5", "yolov5s", pretrained=True)
 
 def object_tracking():
     """Funcion de tracking de objetos."""
-    cap = cv2.VideoCapture(r"/home/alan/Ambiente/kalman/test.mp4")
+    # cap = cv2.VideoCapture(r"/home/alan/Ambiente/kalman/test.mp4")
+    cap = cv2.VideoCapture(0)
     mot_tracker = Sort()
 
     while True:
